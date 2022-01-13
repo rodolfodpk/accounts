@@ -1,6 +1,7 @@
 package io.github.crabzilla.accounts
 
 import io.github.crabzilla.accounts.Helpers.asJson
+import io.github.crabzilla.accounts.Helpers.configRetriever
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand
 import io.github.crabzilla.accounts.processors.AccountOpenedProjector
@@ -9,13 +10,9 @@ import io.github.crabzilla.core.metadata.CommandMetadata
 import io.github.crabzilla.json.KotlinJsonSerDer
 import io.github.crabzilla.pgclient.command.CommandsContext
 import io.github.crabzilla.pgclient.command.SnapshotType
-import io.vertx.config.ConfigRetriever
-import io.vertx.config.ConfigRetrieverOptions
-import io.vertx.config.ConfigStoreOptions
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Future
 import io.vertx.core.Vertx
-import io.vertx.core.json.JsonObject
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
 import io.vertx.pgclient.PgPool
@@ -57,14 +54,6 @@ class TransferHappyScenarioTest {
     val transfersSerDer = KotlinJsonSerDer(PendingTransfersVerticle.transferJson)
 
     private const val DEFAULT_WAIT_MS = 2000L
-
-    fun configRetriever(vertx: Vertx): ConfigRetriever {
-      val fileStore = ConfigStoreOptions()
-        .setType("file")
-        .setConfig(JsonObject().put("path", "./../conf/config.test.json"))
-      val options = ConfigRetrieverOptions().addStore(fileStore)
-      return ConfigRetriever.create(vertx, options)
-    }
 
     @BeforeAll
     @JvmStatic
