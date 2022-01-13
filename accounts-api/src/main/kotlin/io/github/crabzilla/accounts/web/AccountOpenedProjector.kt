@@ -21,7 +21,7 @@ class AccountOpenedProjector(override val viewName: String) : EventsProjector {
     }
 
     val id = eventMetadata.stateId
-    return when (val eventName = eventAsJson.getString("type")) {
+    return when (eventAsJson.getString("type")) {
       "AccountOpened" ->
         register(conn, id, eventAsJson.getString("cpf"), eventAsJson.getString("name"))
       else ->
