@@ -61,7 +61,7 @@ cd accounts-integration
 mvn exec:java
 ```
 
-5 - Optionally, you can recreate the database from sratch:
+5 - Optionally, you can recreate the database from scratch:
 
 ```
 docker-compose down -v
