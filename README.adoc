@@ -14,10 +14,9 @@ image:https://img.shields.io/badge/crabzilla.v0.4.0-orange.svg[link="https://git
 
 This is an example of an application using https://vertx.io/[Vert.x] and https://github.com/crabzilla/crabzilla[Crabzilla]
 
-== Read model tables
+== Overview
 
-* accounts_view
-* transfers_view
+image::accounts.drawio.png[Overview]
 
 == Requirements
 
