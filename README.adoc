@@ -18,8 +18,6 @@ This is an example of an application using https://vertx.io/[Vert.x] and https:/
 
 image::accounts.drawio.png[Overview]
 
-Observation: `TransferConcluded` event should be refactored into 2 events: `TransferSucceeded` and `TransferFailed`.
-
 == Requirements
 
 * Java 11
