@@ -12,7 +12,9 @@ import io.github.crabzilla.pgclient.command.CommandsContext
 import io.github.crabzilla.pgclient.command.SnapshotType
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Future
+import io.vertx.core.Future.succeededFuture
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonObject
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
 import io.vertx.pgclient.PgPool
@@ -53,6 +55,10 @@ class TransferHappyScenarioTest {
     val accountsSerDer = KotlinJsonSerDer(PendingTransfersVerticle.accountJson)
     val transfersSerDer = KotlinJsonSerDer(PendingTransfersVerticle.transferJson)
 
+    fun dbConfig(config: JsonObject) : JsonObject {
+      return config.getJsonObject("accounts-db-config")
+    }
+
     private const val DEFAULT_WAIT_MS = 2000L
 
     @BeforeAll
@@ -85,8 +91,7 @@ class TransferHappyScenarioTest {
   fun `given a fresh database and an account A with 100 and B with 0`(vertx: Vertx, tc: VertxTestContext) {
     configRetriever(vertx).config
       .compose { config ->
-        val acctContext = CommandsContext.create(vertx, accountsSerDer,
-          config.getJsonObject("accounts-db-config"))
+        val acctContext = CommandsContext.create(vertx, accountsSerDer, dbConfig(config))
         val acctController = acctContext.create(PendingTransfersVerticle.accountConfig, SnapshotType.ON_DEMAND,
           AccountOpenedProjector("accounts_view"))
         cleanDatabase(acctContext.pgPool)
@@ -115,8 +120,7 @@ class TransferHappyScenarioTest {
   fun `when transferring 60 from account A to B`(vertx: Vertx, tc: VertxTestContext) {
     configRetriever(vertx).config
       .compose { config ->
-        val transferController = CommandsContext.create(vertx, transfersSerDer,
-          config.getJsonObject("accounts-db-config"))
+        val transferController = CommandsContext.create(vertx, transfersSerDer, dbConfig(config))
           .create(PendingTransfersVerticle.transferConfig, SnapshotType.ON_DEMAND)
         log.info("Will handle {}", cmd3)
         transferController.handle(md3, cmd3)
@@ -163,13 +167,12 @@ class TransferHappyScenarioTest {
     Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
     configRetriever(vertx).config
       .compose { config ->
-        val commandsContext1 = KotlinJsonSerDer(PendingTransfersVerticle.accountJson)
-          .let { CommandsContext.create(vertx, it, config.getJsonObject("accounts-db-config")) }
+        val commandsContext1 = CommandsContext.create(vertx, accountsSerDer, dbConfig(config))
         commandsContext1.pgPool
           .query("select * from accounts_view")
           .execute()
           .compose {
-            Future.succeededFuture(it.asJson("id"))
+            succeededFuture(it.asJson("id"))
           }.compose { accounts ->
             commandsContext1.pgPool
               .query("select * from transfers_view")

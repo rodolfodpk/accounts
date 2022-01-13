@@ -22,7 +22,7 @@ object Helpers {
     val json = JsonObject()
     this.forEach {
       val rowAsJson = it.toJson()
-      json.put(rowAsJson.getString("id"), rowAsJson)
+      json.put(rowAsJson.getString(key), rowAsJson)
     }
     return json
   }
