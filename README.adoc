@@ -14,9 +14,11 @@ image:https://img.shields.io/badge/crabzilla.v0.4.0-orange.svg[link="https://git
 
 This is an example of an application using https://vertx.io/[Vert.x] and https://github.com/crabzilla/crabzilla[Crabzilla]
 
-== Overview
+== https://eventmodeling.org/posts/what-is-event-modeling/[Eventmodeling]
 
 image::accounts.drawio.png[Overview]
+
+Observation: `TransferConcluded` event should be refactored into 2 events: `TransferSucceeded` and `TransferFailed`.
 
 == Requirements
 
