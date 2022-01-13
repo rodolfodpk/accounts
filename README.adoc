@@ -24,16 +24,16 @@ image::accounts.drawio.png[Overview]
 * Maven
 * Docker compose
 
-== Unit and integration testing
+== Building
 
 1 - Start Postgres:
 ```
 docker-compose up
 ```
 
-2 - Run both unit and integration tests:
+2 - Build it, running both unit and integration tests:
 ```
-mvn clean verify
+mvn clean install
 ```
 
 == Running
@@ -59,6 +59,12 @@ mvn clean compile exec:java
 ```
 cd accounts-integration
 mvn exec:java
+```
+
+5 - Optionally, you can recreate the database from sratch:
+
+```
+docker-compose down -v
 ```
 
 === Transfer test
