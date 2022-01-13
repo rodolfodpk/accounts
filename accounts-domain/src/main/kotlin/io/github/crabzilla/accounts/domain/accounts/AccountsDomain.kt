@@ -89,7 +89,7 @@ class AccountCommandHandler : CommandHandler<Account, AccountCommand, AccountEve
 
     private fun Account.deposit(amount: Double): List<AccountEvent> {
       if (amount > LIMIT) {
-        throw DepositExceeded(amount)
+        throw DepositExceeded(LIMIT)
       }
       return listOf(MoneyDeposited(amount, balance + amount))
     }
