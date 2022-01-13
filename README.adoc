@@ -70,7 +70,6 @@ Open an account 1 with 110.00 and 2 with 0.00 then make a 100.00 transfer from a
 docker run --network host -i loadimpact/k6 run - <./k6/transfer.js
 ```
 
-
 === Stress test
 
 Opening many accounts with 1000 virtual users during 60 seconds:

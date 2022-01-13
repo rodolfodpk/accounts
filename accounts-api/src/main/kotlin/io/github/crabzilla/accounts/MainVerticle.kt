@@ -17,6 +17,7 @@ class MainVerticle : AbstractVerticle() {
   companion object {
     private val log = LoggerFactory.getLogger(MainVerticle::class.java)
     private val node = ManagementFactory.getRuntimeMXBean().name
+    private val cores = Runtime.getRuntime().availableProcessors()
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -38,13 +39,12 @@ class MainVerticle : AbstractVerticle() {
     log.info("**** Node {} will start", node)
     configRetriever(vertx).config
       .compose { config ->
-        log.info("**** config " + config.encodePrettily())
-        log.info("**** clustered? ${vertx.isClustered}")
-        // try to deploy web verticle
-        val opt1 = DeploymentOptions().setConfig(config).setHa(false).setInstances(4)
+        log.info("**** config {}", config.encodePrettily())
+        log.info("**** cores {}", cores)
+        val opt1 = DeploymentOptions().setConfig(config).setInstances(cores/2)
         vertx.deployVerticle(WebVerticle::class.qualifiedName, opt1)
           .onSuccess {
-            log.info("CommandWebVerticle started")
+            log.info("WebVerticle started")
           }
       }
       .onFailure {

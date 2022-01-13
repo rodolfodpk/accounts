@@ -53,8 +53,7 @@ class MainVerticle : AbstractVerticle() {
         configRetriever(vertx).config
           .compose { config ->
             log.info("**** Node {} will start", node)
-            log.info("**** config " + config.encodePrettily())
-            log.info("**** clustered? ${vertx.isClustered}")
+            log.info("**** config {}", config.encodePrettily())
             vertx.deployProcessor(config, PendingTransfersVerticle::class.java)
               .compose {
                 vertx.deployProjector(config, "service:projectors.accounts.AccountsView")
