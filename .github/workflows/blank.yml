@@ -16,6 +16,8 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
+    env:
+      CODECOV_TOKEN: 03531c76-8616-4bc0-b52c-aed7cc7405f9
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -41,6 +43,4 @@ jobs:
         run: mvn clean install
 
       - name: Upload reports to codecov
-        env:
-          CODECOV_TOKEN: 03531c76-8616-4bc0-b52c-aed7cc7405f9
         run: bash <(curl -s https://codecov.io/bash)
