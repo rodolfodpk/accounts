@@ -54,7 +54,7 @@ class AccountsSpecsTest : AnnotationSpec() {
         val exception = shouldThrow<DepositExceeded> {
           it.whenCommand(DepositMoney(2500.00))
         }
-        exception.message shouldBe "Cannot deposit more than 2500.0"
+        exception.message shouldBe "Cannot deposit more than 2000.0"
       }
   }
 
