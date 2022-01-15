@@ -115,7 +115,6 @@ class TransferHappyScenarioTest {
     log.info("Will handle {}", cmd3)
     transferController.handle(md3, cmd3)
       .onSuccess {
-        Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
         tc.completeNow()
       }
       .onFailure { tc.failNow(it) }
@@ -136,7 +135,6 @@ class TransferHappyScenarioTest {
   @Order(4)
   fun `and after triggering accounts projector`(vertx: Vertx, tc: VertxTestContext) {
     vertx.eventBus().request<Void>("crabzilla.projectors.projectors.accounts.AccountsView", "go!") {
-      Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
       tc.completeNow()
     }
   }
@@ -145,7 +143,6 @@ class TransferHappyScenarioTest {
   @Order(5)
   fun `and after triggering transfers projector`(vertx: Vertx, tc: VertxTestContext) {
     vertx.eventBus().request<Void>("crabzilla.projectors.projectors.transfers.TransfersView", "go!") {
-      Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
       tc.completeNow()
     }
   }
