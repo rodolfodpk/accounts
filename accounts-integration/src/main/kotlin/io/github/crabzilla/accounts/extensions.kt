@@ -18,7 +18,7 @@ fun <V: PgClientAbstractVerticle> Vertx.deployProcessor(config: JsonObject, claz
   log.info("Listening to crabzilla.${clazz.canonicalName}.ping")
   this
     .eventBus()
-    .request<String>("crabzilla.${clazz.canonicalName}.ping", node) { resp ->
+    .request<String>("crabzilla.${clazz.name}.ping", node) { resp ->
       if (resp.failed()) {
         val projectionOptions = DeploymentOptions().setConfig(config).setHa(true).setInstances(1)
         this.deployVerticle(clazz.canonicalName, projectionOptions)

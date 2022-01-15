@@ -3,7 +3,6 @@ package io.github.crabzilla.accounts.domain
 import io.github.crabzilla.accounts.domain.transfers.Transfer
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand
 import io.github.crabzilla.accounts.domain.transfers.TransferCommandHandler
-import io.github.crabzilla.accounts.domain.transfers.TransferEvent
 import io.github.crabzilla.accounts.domain.transfers.TransferEvent.TransferConcluded
 import io.github.crabzilla.accounts.domain.transfers.TransferEvent.TransferRequested
 import io.github.crabzilla.accounts.domain.transfers.transferEventHandler

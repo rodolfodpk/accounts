@@ -4,12 +4,8 @@ import io.github.crabzilla.accounts.Helpers.asJson
 import io.github.crabzilla.accounts.Helpers.configRetriever
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand
-import io.github.crabzilla.accounts.processors.AccountOpenedProjector
-import io.github.crabzilla.accounts.processors.PendingTransfersVerticle
 import io.github.crabzilla.core.metadata.CommandMetadata
-import io.github.crabzilla.json.KotlinJsonSerDer
-import io.github.crabzilla.pgclient.command.CommandsContext
-import io.github.crabzilla.pgclient.command.SnapshotType
+import io.github.crabzilla.pgclient.PgClientFactory
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Future
 import io.vertx.core.Future.succeededFuture
@@ -52,20 +48,22 @@ class TransferHappyScenarioTest {
     val cmd3 = TransferCommand.RequestTransfer(md3.stateId, 60.00,
       fromAccountId = md1.stateId, toAccountId = md2.stateId)
 
-    val accountsSerDer = KotlinJsonSerDer(PendingTransfersVerticle.accountJson)
-    val transfersSerDer = KotlinJsonSerDer(PendingTransfersVerticle.transferJson)
-
-    fun dbConfig(config: JsonObject) : JsonObject {
+    private fun dbConfig(config: JsonObject) : JsonObject {
       return config.getJsonObject("accounts-db-config")
     }
 
     private const val DEFAULT_WAIT_MS = 2000L
+
+    lateinit var pgPool: PgPool
 
     @BeforeAll
     @JvmStatic
     fun deployMainVerticle(vertx: Vertx, testContext: VertxTestContext) {
       configRetriever(vertx).config
         .onSuccess { config ->
+          val pgConnectOptions = PgClientFactory.createPgConnectOptions(dbConfig(config))
+          val pgPoolOptions = PgClientFactory.createPoolOptions(dbConfig(config))
+          pgPool = PgPool.pool(vertx, pgConnectOptions, pgPoolOptions)
           vertx.deployVerticle(MainVerticle(), DeploymentOptions().setConfig(config), testContext.succeeding {
             testContext.completeNow()
           }
@@ -89,47 +87,38 @@ class TransferHappyScenarioTest {
   @Test
   @Order(1)
   fun `given a fresh database and an account A with 100 and B with 0`(vertx: Vertx, tc: VertxTestContext) {
-    configRetriever(vertx).config
-      .compose { config ->
-        val acctContext = CommandsContext.create(vertx, accountsSerDer, dbConfig(config))
-        val acctController = acctContext.create(PendingTransfersVerticle.accountConfig, SnapshotType.ON_DEMAND,
-          AccountOpenedProjector("accounts_view"))
-        cleanDatabase(acctContext.pgPool)
+    val acctController = DomainFactory.accountsController(vertx, pgPool)
+    cleanDatabase(pgPool)
+      .compose {
+        log.info("Will handle {}", cmd1)
+        acctController.handle(md1, cmd1)
           .compose {
-            log.info("Will handle {}", cmd1)
-            acctController.handle(md1, cmd1)
-              .compose {
-                log.info("Will handle {}", cmd11)
-                acctController.handle(md11, cmd11)
-              }
-              .compose {
-                log.info("Will handle {}", cmd2)
-                acctController.handle(md2, cmd2)
-              }
+            log.info("Will handle {}", cmd11)
+            acctController.handle(md11, cmd11)
           }
-          .onSuccess {
-            Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
-            tc.completeNow()
+          .compose {
+            log.info("Will handle {}", cmd2)
+            acctController.handle(md2, cmd2)
           }
-          .onFailure { tc.failNow(it) }
       }
+      .onSuccess {
+        Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
+        tc.completeNow()
+      }
+      .onFailure { tc.failNow(it) }
   }
 
   @Test
   @Order(2)
   fun `when transferring 60 from account A to B`(vertx: Vertx, tc: VertxTestContext) {
-    configRetriever(vertx).config
-      .compose { config ->
-        val transferController = CommandsContext.create(vertx, transfersSerDer, dbConfig(config))
-          .create(PendingTransfersVerticle.transferConfig, SnapshotType.ON_DEMAND)
-        log.info("Will handle {}", cmd3)
-        transferController.handle(md3, cmd3)
-          .onSuccess {
-            Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
-            tc.completeNow()
-          }
-          .onFailure { tc.failNow(it) }
+    val transferController = DomainFactory.transfersController(vertx, pgPool)
+    log.info("Will handle {}", cmd3)
+    transferController.handle(md3, cmd3)
+      .onSuccess {
+        Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
+        tc.completeNow()
       }
+      .onFailure { tc.failNow(it) }
   }
 
   @Test
@@ -165,48 +154,45 @@ class TransferHappyScenarioTest {
   @Order(6)
   fun `then the view model is up to date and consistent`(vertx: Vertx, tc: VertxTestContext) {
     Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
-    configRetriever(vertx).config
-      .compose { config ->
-        val commandsContext1 = CommandsContext.create(vertx, accountsSerDer, dbConfig(config))
-        commandsContext1.pgPool
-          .query("select * from accounts_view")
+    pgPool
+      .query("select * from accounts_view")
+      .execute()
+      .compose {
+        succeededFuture(it.asJson("id"))
+      }.compose { accounts ->
+        pgPool
+          .query("select * from transfers_view")
           .execute()
-          .compose {
-            succeededFuture(it.asJson("id"))
-          }.compose { accounts ->
-            commandsContext1.pgPool
-              .query("select * from transfers_view")
-              .execute()
-              .map { Pair(accounts, it.asJson("id")) }
-          }
-          .onSuccess { pair ->
-            val (accounts, transfers) = pair
-            // accounts
-            log.info("Accounts view {}", accounts.encodePrettily())
-            val account1 = accounts.getJsonObject(md1.stateId.toString())
-            if (account1.getDouble("balance") != 40.00) {
-              tc.failNow("acct1 should have balance = 40.00")
-            }
-            val account2 = accounts.getJsonObject(md2.stateId.toString())
-            if (account2.getDouble("balance") != 60.00) {
-              tc.failNow("acct2 should have balance = 60.00")
-            }
-            // transfer
-            log.info("Transfers view {}", transfers.encodePrettily())
-            val transfer = transfers.getJsonObject(md3.stateId.toString())
-            if (transfer.getDouble("amount") != 60.00) {
-              tc.failNow("transfer should have amount = 100.00")
-            }
-            if (transfer.getBoolean("pending")) {
-              tc.failNow("transfer should not be pending")
-            }
-            if (!transfer.getBoolean("succeeded")) {
-              tc.failNow("transfer should be succeeded")
-            }
-            tc.completeNow()
-          }
-          .onFailure { tc.failNow(it) }
+          .map { Pair(accounts, it.asJson("id")) }
       }
+      .onSuccess { pair ->
+        val (accounts, transfers) = pair
+        // accounts
+        log.info("Accounts view {}", accounts.encodePrettily())
+        val account1 = accounts.getJsonObject(md1.stateId.toString())
+        if (account1.getDouble("balance") != 40.00) {
+          tc.failNow("acct1 should have balance = 40.00")
+        }
+        val account2 = accounts.getJsonObject(md2.stateId.toString())
+        if (account2.getDouble("balance") != 60.00) {
+          tc.failNow("acct2 should have balance = 60.00")
+        }
+        // transfer
+        log.info("Transfers view {}", transfers.encodePrettily())
+        val transfer = transfers.getJsonObject(md3.stateId.toString())
+        if (transfer.getDouble("amount") != 60.00) {
+          tc.failNow("transfer should have amount = 100.00")
+        }
+        if (transfer.getBoolean("pending")) {
+          tc.failNow("transfer should not be pending")
+        }
+        if (!transfer.getBoolean("succeeded")) {
+          tc.failNow("transfer should be succeeded")
+        }
+        tc.completeNow()
+      }
+      .onFailure { tc.failNow(it) }
+
   }
 
 }

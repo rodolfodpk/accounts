@@ -43,7 +43,8 @@ class WebVerticle : AbstractVerticle() {
         router
           .put("/accounts/:$ID_PARAM/deposit")
           .handler {
-            commandsResource.handle(it) { (_, body) -> DepositMoney(body.getDouble("amount")) }
+            commandsResource.handle(it) { (_, body) ->
+              DepositMoney(body.getDouble("amount")) }
           }
         router
           .put("/accounts/:$ID_PARAM/withdraw")
