@@ -87,7 +87,7 @@ class TransferHappyScenarioTest {
   @Test
   @Order(1)
   fun `given a fresh database and an account A with 100 and B with 0`(vertx: Vertx, tc: VertxTestContext) {
-    val acctController = DomainFactory.accountsController(vertx, pgPool)
+    val acctController = CommandControllersFactory.accountsController(vertx, pgPool)
     cleanDatabase(pgPool)
       .compose {
         log.info("Will handle {}", cmd1)
@@ -111,7 +111,7 @@ class TransferHappyScenarioTest {
   @Test
   @Order(2)
   fun `when transferring 60 from account A to B`(vertx: Vertx, tc: VertxTestContext) {
-    val transferController = DomainFactory.transfersController(vertx, pgPool)
+    val transferController = CommandControllersFactory.transfersController(vertx, pgPool)
     log.info("Will handle {}", cmd3)
     transferController.handle(md3, cmd3)
       .onSuccess {

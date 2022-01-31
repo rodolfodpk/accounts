@@ -87,7 +87,7 @@ class TransferCommandHandler : CommandHandler<Transfer, TransferCommand, Transfe
 
   override fun handleCommand(
     command: TransferCommand,
-    state: Transfer?,
+    state: Transfer?
   )
           : CommandSession<Transfer, TransferEvent> {
     return when (command) {

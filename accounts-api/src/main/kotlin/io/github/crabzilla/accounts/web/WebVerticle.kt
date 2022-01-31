@@ -1,37 +1,26 @@
 package io.github.crabzilla.accounts.web
 
+import io.github.crabzilla.accounts.CommandControllersFactory
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand.DepositMoney
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand.OpenAccount
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand.WithdrawMoney
-import io.github.crabzilla.accounts.domain.accounts.AccountCommandHandler
-import io.github.crabzilla.accounts.domain.accounts.AccountsSerialization
-import io.github.crabzilla.accounts.domain.accounts.accountEventHandler
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand.RequestTransfer
-import io.github.crabzilla.accounts.domain.transfers.TransferCommandHandler
-import io.github.crabzilla.accounts.domain.transfers.TransfersSerialization
-import io.github.crabzilla.accounts.domain.transfers.transferEventHandler
 import io.github.crabzilla.accounts.web.CommandsResource.Companion.ID_PARAM
-import io.github.crabzilla.core.command.CommandControllerConfig
-import io.vertx.core.AbstractVerticle
+import io.github.crabzilla.pgclient.PgClientAbstractVerticle
 import io.vertx.core.Promise
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
-import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
-class WebVerticle : AbstractVerticle() {
+class WebVerticle : PgClientAbstractVerticle() {
 
   companion object {
     private val log = LoggerFactory.getLogger(WebVerticle::class.java)
-    val accountJson = Json { serializersModule = AccountsSerialization.accountModule }
-    val accountConfig = CommandControllerConfig("Account", accountEventHandler, { AccountCommandHandler() })
-    val transferJson = Json { serializersModule = TransfersSerialization.transferModule }
-    val transferConfig = CommandControllerConfig("Transfer", transferEventHandler, { TransferCommandHandler() })
   }
 
   private fun startAccountsResource(router: Router) {
-    CommandsResource(vertx, config(), accountJson, accountConfig, AccountOpenedProjector("accounts_view"))
+    CommandsResource(CommandControllersFactory.accountsController(vertx, pgPool))
       .also { commandsResource ->
         router
           .put("/accounts/:$ID_PARAM/open")
@@ -55,7 +44,7 @@ class WebVerticle : AbstractVerticle() {
   }
 
   private fun startTransferResource(router: Router) {
-    CommandsResource(vertx, config(), transferJson, transferConfig)
+    CommandsResource(CommandControllersFactory.transfersController(vertx, pgPool))
       .also { commandsResource ->
         router
           .put("/transfers/:$ID_PARAM/request")

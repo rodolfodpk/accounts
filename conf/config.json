@@ -1,4 +1,5 @@
 {
+  "connectOptionsName": "accounts-db-config",
   "accounts-db-config" : {
     "port" : 5432,
     "host" : "0.0.0.0",

@@ -1,6 +1,6 @@
 package io.github.crabzilla.accounts.processors
 
-import io.github.crabzilla.accounts.DomainFactory
+import io.github.crabzilla.accounts.CommandControllersFactory
 import io.github.crabzilla.pgclient.PgClientAbstractVerticle
 import io.vertx.core.Future
 import io.vertx.sqlclient.Row
@@ -18,10 +18,8 @@ class PendingTransfersVerticle : PgClientAbstractVerticle() {
 
   override fun start() {
 
-    config().put("connectOptionsName", "accounts-db-config")
-
-    val acctController = DomainFactory.accountsController(vertx, pgPool)
-    val transferController = DomainFactory.transfersController(vertx, pgPool)
+    val acctController = CommandControllersFactory.accountsController(vertx, pgPool)
+    val transferController = CommandControllersFactory.transfersController(vertx, pgPool)
     val service = TransferService(acctController, transferController)
 
     log.info("Starting with interval (ms) = {}", config().getLong("transfer.processor.interval", DEFAULT_INTERVAL))

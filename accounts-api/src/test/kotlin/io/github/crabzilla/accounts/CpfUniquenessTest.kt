@@ -1,12 +1,8 @@
 package io.github.crabzilla.accounts
 
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand
-import io.github.crabzilla.accounts.web.AccountOpenedProjector
-import io.github.crabzilla.accounts.web.WebVerticle
 import io.github.crabzilla.core.metadata.CommandMetadata
-import io.github.crabzilla.json.KotlinJsonSerDer
-import io.github.crabzilla.pgclient.command.CommandsContext
-import io.github.crabzilla.pgclient.command.SnapshotType
+import io.github.crabzilla.pgclient.PgClientFactory
 import io.vertx.config.ConfigRetriever
 import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
@@ -49,6 +45,13 @@ class CpfUniquenessTest {
       return ConfigRetriever.create(vertx, options)
     }
 
+    fun pgPool(vertx: Vertx, config: JsonObject): PgPool {
+      val configId = config.getString("connectOptionsName")
+      val connectOptions = PgClientFactory.createPgConnectOptions(config.getJsonObject(configId))
+      val poolOptions = PgClientFactory.createPoolOptions(config.getJsonObject(configId))
+      return PgPool.pool(vertx, connectOptions, poolOptions)
+    }
+
     @BeforeAll
     @JvmStatic
     fun deployMainVerticle(vertx: Vertx, testContext: VertxTestContext) {
@@ -62,6 +65,8 @@ class CpfUniquenessTest {
     }
 
   }
+
+
 
   private fun cleanDatabase(pgPool: PgPool): Future<Void> {
     return pgPool
@@ -78,11 +83,9 @@ class CpfUniquenessTest {
   fun `when opening 2 accounts with same cpf, it should fail`(vertx: Vertx, tc: VertxTestContext) {
     configRetriever(vertx).config
       .compose { config ->
-        val serDer = KotlinJsonSerDer(WebVerticle.accountJson)
-        val acctContext = CommandsContext.create(vertx, serDer, config.getJsonObject("accounts-db-config"))
-        val acctController = acctContext.create(WebVerticle.accountConfig, SnapshotType.ON_DEMAND,
-          AccountOpenedProjector("accounts_view"))
-        cleanDatabase(acctContext.pgPool)
+        val pgPool = pgPool(vertx, config)
+        val acctController = CommandControllersFactory.accountsController(vertx , pgPool)
+        cleanDatabase(pgPool)
           .compose {
             log.info("Will handle {}", cmd1)
             acctController.handle(md1, cmd1)

@@ -43,15 +43,13 @@ class MainVerticle : AbstractVerticle() {
         log.info("**** cores {}", cores)
         val opt1 = DeploymentOptions().setConfig(config).setInstances(cores/2)
         vertx.deployVerticle(WebVerticle::class.qualifiedName, opt1)
-          .onSuccess {
-            log.info("WebVerticle started")
-          }
       }
       .onFailure {
         startPromise.fail(it)
         log.error(it.message, it)
       }
       .onSuccess {
+        log.info("WebVerticle started")
         startPromise.complete()
       }
   }
