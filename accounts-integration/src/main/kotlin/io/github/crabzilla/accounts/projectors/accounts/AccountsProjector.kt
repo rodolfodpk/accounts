@@ -16,7 +16,6 @@ class AccountsProjector(override val viewName: String) : EventsProjector {
       return conn
         .preparedQuery("update $viewName set balance = $2 where id = $1")
         .execute(Tuple.of(id, finalBalance))
-        .map { it.size() == 1 }
         .mapEmpty()
     }
 

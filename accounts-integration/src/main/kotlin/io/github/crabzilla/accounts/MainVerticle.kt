@@ -2,11 +2,9 @@ package io.github.crabzilla.accounts
 
 import com.hazelcast.config.Config
 import io.github.crabzilla.accounts.processors.PendingTransfersVerticle
-import io.github.crabzilla.pgclient.deployProjector
-import io.vertx.config.ConfigRetriever
-import io.vertx.config.ConfigRetrieverOptions
-import io.vertx.config.ConfigStoreOptions
+import io.github.crabzilla.pgclient.projection.deployProjector
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.DeploymentOptions
 import io.vertx.core.Promise
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -22,12 +20,25 @@ class MainVerticle : AbstractVerticle() {
   companion object {
     private val log = LoggerFactory.getLogger(MainVerticle::class.java)
     private val node = ManagementFactory.getRuntimeMXBean().name
-
+    val config = JsonObject("""
+        {
+          "targetDatabase": "accounts-db-config",
+          "accounts-db-config" : {
+            "port" : 5432,
+            "host" : "0.0.0.0",
+            "database" : "accounts",
+            "user" : "user1",
+            "password" : "pwd1",
+            "pool" : {
+              "maxSize": 12
+            }
+          }
+        }
+      """.trimIndent())
     @JvmStatic
     fun main(args: Array<String>) {
-      Vertx.vertx().deployVerticle(MainVerticle())
+      Vertx.vertx().deployVerticle(MainVerticle(), DeploymentOptions().setConfig(config))
     }
-
   }
 
   override fun start(startPromise: Promise<Void>) {
@@ -39,35 +50,23 @@ class MainVerticle : AbstractVerticle() {
       return HazelcastClusterManager(hazelcastConfig)
     }
 
-    fun configRetriever(vertx: Vertx): ConfigRetriever {
-      val fileStore = ConfigStoreOptions()
-        .setType("file")
-        .setConfig(JsonObject().put("path", "./../conf/config.json"))
-      val options = ConfigRetrieverOptions().addStore(fileStore)
-      return ConfigRetriever.create(vertx, options)
-    }
-
     val options = VertxOptions().setClusterManager(clusterMgr()).setHAEnabled(true)
     Vertx.clusteredVertx(options)
       .compose { vertx ->
-        configRetriever(vertx).config
-          .compose { config ->
-            log.info("**** Node {} will start", node)
-            log.info("**** config {}", config.encodePrettily())
-            vertx.deployProcessor(config, PendingTransfersVerticle::class.java)
-              .compose {
-                vertx.deployProjector(config, "service:projectors.accounts.AccountsView")
-              }
-              .compose {
-                vertx.deployProjector(config, "service:projectors.transfers.TransfersView")
-              }
-              .onFailure {
-                startPromise.fail(it)
-                log.error(it.message, it)
-              }
-              .onSuccess {
-                startPromise.complete()
-              }
+        log.info(config.encodePrettily())
+        vertx.deployProcessor(config, PendingTransfersVerticle::class.java)
+          .compose {
+            vertx.deployProjector(config, "service:projectors.accounts.AccountsView")
+          }
+          .compose {
+            vertx.deployProjector(config, "service:projectors.transfers.TransfersView")
+          }
+          .onFailure {
+            startPromise.fail(it)
+            log.error(it.message, it)
+          }
+          .onSuccess {
+            startPromise.complete()
           }
       }
 

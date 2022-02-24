@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.crabzilla</groupId>
         <artifactId>accounts</artifactId>
-        <version>v0.4.3</version>
+        <version>v0.4.5</version>
     </parent>
 
     <artifactId>accounts-integration</artifactId>
@@ -23,8 +23,8 @@
         <!-- crabzilla -->
 
         <dependency>
-            <groupId>io.github.crabzilla.crabzilla</groupId>
-            <artifactId>crabzilla-vertx-pgclient</artifactId>
+            <groupId>io.github.crabzilla</groupId>
+            <artifactId>crabzilla-pgclient</artifactId>
         </dependency>
 
         <!-- vertx -->

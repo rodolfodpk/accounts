@@ -6,9 +6,7 @@ import io.github.crabzilla.accounts.domain.accounts.AccountCommand.WithdrawMoney
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.AccountOpened
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.MoneyDeposited
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.MoneyWithdrawn
-import io.github.crabzilla.core.Command
-import io.github.crabzilla.core.Event
-import io.github.crabzilla.core.State
+import io.github.crabzilla.core.command.CommandException.UnknownCommandException
 import io.github.crabzilla.core.command.CommandHandler
 import io.github.crabzilla.core.command.CommandSession
 import io.github.crabzilla.core.command.EventHandler
@@ -18,7 +16,7 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
-sealed class AccountEvent : Event {
+sealed class AccountEvent {
   @Serializable
   @SerialName("AccountOpened")
   data class AccountOpened(@Contextual val id: UUID, val cpf: String, val name: String) : AccountEvent()
@@ -34,7 +32,7 @@ sealed class AccountEvent : Event {
 }
 
 @Serializable
-sealed class AccountCommand : Command {
+sealed class AccountCommand {
   @Serializable
   @SerialName("OpenAccount")
   data class OpenAccount(@Contextual val id: UUID, val cpf: String, val name: String) : AccountCommand()
@@ -56,7 +54,7 @@ data class Account(
   val cpf: String,
   val name: String,
   val balance: Double = 0.00
-) : State {
+) {
   companion object {
     fun fromEvent(event: AccountOpened): Account {
       return Account(id = event.id, cpf = event.cpf, name = event.name)
@@ -116,7 +114,7 @@ class AccountCommandHandler : CommandHandler<Account, AccountCommand, AccountEve
         when (command) {
           is DepositMoney -> with(state).execute { it.deposit(command.amount) }
           is WithdrawMoney -> with(state).execute { it.withdraw(command.amount) }
-          else -> throw IllegalArgumentException("Invalid command")
+          else -> throw UnknownCommandException(command::class.java.name)
         }
       }
     }

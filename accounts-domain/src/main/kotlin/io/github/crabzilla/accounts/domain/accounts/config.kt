@@ -6,31 +6,37 @@ import io.github.crabzilla.accounts.domain.accounts.AccountCommand.WithdrawMoney
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.AccountOpened
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.MoneyDeposited
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.MoneyWithdrawn
-import io.github.crabzilla.core.Command
-import io.github.crabzilla.core.Event
-import io.github.crabzilla.core.State
-import io.github.crabzilla.json.javaModule
+import io.github.crabzilla.core.command.CommandControllerConfig
+import io.github.crabzilla.core.json.javaModule
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
-object AccountsSerialization {
-
-  @kotlinx.serialization.ExperimentalSerializationApi
-  val accountModule = SerializersModule {
+@kotlinx.serialization.ExperimentalSerializationApi
+private val accountModule = SerializersModule {
     include(javaModule)
-    polymorphic(State::class) {
+    polymorphic(Account::class) {
       subclass(Account::class, Account.serializer())
     }
-    polymorphic(Command::class) {
+    polymorphic(AccountCommand::class) {
       subclass(OpenAccount::class, OpenAccount.serializer())
       subclass(DepositMoney::class, DepositMoney.serializer())
       subclass(WithdrawMoney::class, WithdrawMoney.serializer())
     }
-    polymorphic(Event::class) {
+    polymorphic(AccountEvent::class) {
       subclass(AccountOpened::class, AccountOpened.serializer())
       subclass(MoneyDeposited::class, MoneyDeposited.serializer())
       subclass(MoneyWithdrawn::class, MoneyWithdrawn.serializer())
     }
-  }
-
 }
+
+val accountJson = Json { serializersModule = accountModule }
+
+val accountConfig = CommandControllerConfig(
+  PolymorphicSerializer(Account::class),
+  PolymorphicSerializer(AccountCommand::class),
+  PolymorphicSerializer(AccountEvent::class),
+  accountEventHandler,
+  { AccountCommandHandler() }
+)

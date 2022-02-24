@@ -17,7 +17,6 @@ class AccountOpenedProjector(override val viewName: String) : EventsProjector {
       return conn
         .preparedQuery("insert into $viewName (id, cpf, name) values ($1, $2, $3) returning id")
         .execute(Tuple.of(id, cpf, name))
-        .map { it.size() == 1 }
         .mapEmpty()
     }
 

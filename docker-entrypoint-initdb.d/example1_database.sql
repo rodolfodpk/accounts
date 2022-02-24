@@ -56,7 +56,7 @@ CREATE TABLE events (
     ;
 
 CREATE INDEX sequence_idx ON events using brin (sequence);
-CREATE INDEX state_name ON events (state_type);
+CREATE INDEX state_type ON events (state_type);
 --CREATE INDEX event_type ON events (event_type);
 
 -- 3 partitions

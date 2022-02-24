@@ -4,9 +4,6 @@ import io.github.crabzilla.accounts.domain.transfers.TransferCommand.RegisterRes
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand.RequestTransfer
 import io.github.crabzilla.accounts.domain.transfers.TransferEvent.TransferConcluded
 import io.github.crabzilla.accounts.domain.transfers.TransferEvent.TransferRequested
-import io.github.crabzilla.core.Command
-import io.github.crabzilla.core.Event
-import io.github.crabzilla.core.State
 import io.github.crabzilla.core.command.CommandHandler
 import io.github.crabzilla.core.command.CommandSession
 import io.github.crabzilla.core.command.EventHandler
@@ -16,7 +13,7 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
-sealed class TransferEvent : Event {
+sealed class TransferEvent {
 
   @Serializable
   @SerialName("TransferRequested")
@@ -31,7 +28,7 @@ sealed class TransferEvent : Event {
 }
 
 @Serializable
-sealed class TransferCommand : Command {
+sealed class TransferCommand {
 
   @Serializable
   @SerialName("RequestTransfer")
@@ -55,7 +52,7 @@ data class Transfer(
   @Contextual val toAccountId: UUID,
   val succeeded: Boolean?,
   val errorMessage: String?
-) : State {
+) {
   companion object {
     fun fromEvent(event: TransferRequested): Transfer {
       return Transfer(id = event.id, amount = event.amount, fromAccountId =  event.fromAccountId,

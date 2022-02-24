@@ -1,5 +1,6 @@
 package io.github.crabzilla.accounts.web
 
+import io.github.crabzilla.accounts.domain.accounts.AccountEvent
 import io.github.crabzilla.core.metadata.EventMetadata
 import io.github.crabzilla.pgclient.EventsProjector
 import io.vertx.core.Future
@@ -7,9 +8,11 @@ import io.vertx.core.Future.succeededFuture
 import io.vertx.core.json.JsonObject
 import io.vertx.sqlclient.SqlConnection
 import io.vertx.sqlclient.Tuple
+import kotlinx.serialization.ExperimentalSerializationApi
 import java.util.UUID
 
 // TODO propagate causation and correlation ids
+@ExperimentalSerializationApi
 class AccountOpenedProjector(override val viewName: String) : EventsProjector {
 
   override fun project(conn: SqlConnection, eventAsJson: JsonObject, eventMetadata: EventMetadata): Future<Void> {
@@ -22,7 +25,7 @@ class AccountOpenedProjector(override val viewName: String) : EventsProjector {
 
     val id = eventMetadata.stateId
     return when (eventAsJson.getString("type")) {
-      "AccountOpened" ->
+      AccountEvent.AccountOpened.serializer().descriptor.serialName ->
         register(conn, id, eventAsJson.getString("cpf"), eventAsJson.getString("name"))
       else ->
         succeededFuture() // ignore event

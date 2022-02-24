@@ -9,6 +9,7 @@ import io.vertx.core.DeploymentOptions
 import io.vertx.core.Promise
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.slf4j.LoggerFactory
 import java.lang.management.ManagementFactory
 
@@ -18,32 +19,34 @@ class MainVerticle : AbstractVerticle() {
     private val log = LoggerFactory.getLogger(MainVerticle::class.java)
     private val node = ManagementFactory.getRuntimeMXBean().name
     private val cores = Runtime.getRuntime().availableProcessors()
-
+    val config = JsonObject("""
+        {
+          "targetDatabase": "accounts-db-config",
+          "accounts-db-config" : {
+            "port" : 5432,
+            "host" : "0.0.0.0",
+            "database" : "accounts",
+            "user" : "user1",
+            "password" : "pwd1",
+            "pool" : {
+              "maxSize": 12
+            }
+          }
+        }
+      """.trimIndent())
     @JvmStatic
     fun main(args: Array<String>) {
-      Vertx.vertx().deployVerticle(MainVerticle())
+      Vertx.vertx().deployVerticle(MainVerticle(), DeploymentOptions().setConfig(config))
     }
 
   }
 
   override fun start(startPromise: Promise<Void>) {
-
-    fun configRetriever(vertx: Vertx): ConfigRetriever {
-      val fileStore = ConfigStoreOptions()
-        .setType("file")
-        .setConfig(JsonObject().put("path", "./../conf/config.json"))
-      val options = ConfigRetrieverOptions().addStore(fileStore)
-      return ConfigRetriever.create(vertx, options)
-    }
-
     log.info("**** Node {} will start", node)
-    configRetriever(vertx).config
-      .compose { config ->
-        log.info("**** config {}", config.encodePrettily())
-        log.info("**** cores {}", cores)
-        val opt1 = DeploymentOptions().setConfig(config).setInstances(cores/2)
-        vertx.deployVerticle(WebVerticle::class.qualifiedName, opt1)
-      }
+    log.info("**** config {}", config.encodePrettily())
+    log.info("**** cores {}", cores)
+    val opt1 = DeploymentOptions().setConfig(config).setInstances(cores / 2)
+    vertx.deployVerticle(WebVerticle::class.java, opt1)
       .onFailure {
         startPromise.fail(it)
         log.error(it.message, it)

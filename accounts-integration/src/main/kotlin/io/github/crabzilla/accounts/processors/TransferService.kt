@@ -1,6 +1,5 @@
 package io.github.crabzilla.accounts.processors
 
-import com.github.f4b6a3.uuid.UuidCreator
 import io.github.crabzilla.accounts.domain.accounts.Account
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand.DepositMoney
@@ -46,27 +45,25 @@ class TransferService(
 
     acctController.compose { conn ->
       log.info("Step 1 - Will withdrawn from account {}", pendingTransfer.fromAccountId)
-      val withdrawnMetadata = CommandMetadata(
+      val withdrawnMetadata = CommandMetadata.new(
         stateId = pendingTransfer.fromAccountId,
-        commandId = UuidCreator.getTimeOrdered(),
         causationId = pendingTransfer.causationId,
-        correlationId = correlationId)
+        correlationId = correlationId
+      )
       val withdrawnCommand = AccountCommand.WithdrawMoney(pendingTransfer.amount)
       acctController.handle(conn, withdrawnMetadata, withdrawnCommand)
         .compose { r1: CommandSideEffect ->
           log.info("Step 2 - Will deposit to account {}", pendingTransfer.toAccountId)
-          val depositMetadata = CommandMetadata(
+          val depositMetadata = CommandMetadata.new(
             stateId = pendingTransfer.toAccountId,
-            commandId = UuidCreator.getTimeOrdered(),
             causationId = r1.appendedEvents.last().second.eventId,
             correlationId = correlationId)
           val depositCommand = DepositMoney(pendingTransfer.amount)
           acctController.handle(conn, depositMetadata, depositCommand)
         }.compose { r2: CommandSideEffect ->
           log.info("Step 3 - Will register a succeeded transfer")
-          val registerSuccessMetadata = CommandMetadata(
+          val registerSuccessMetadata = CommandMetadata.new(
             stateId = transferId,
-            commandId = UuidCreator.getTimeOrdered(),
             causationId = r2.appendedEvents.last().second.eventId,
             correlationId = correlationId)
           val registerSuccessCommand = RegisterResult(true, null)
@@ -77,9 +74,9 @@ class TransferService(
         }.onFailure { error ->
           // new transaction
           log.info("Step 3 - Will register a failed transfer", error)
-          val registerFailureMetadata = CommandMetadata(
+          val registerFailureMetadata = CommandMetadata.new(
             stateId = transferId,
-            commandId = UuidCreator.getTimeOrdered(),
+            causationId = correlationId,
             correlationId = correlationId)
           val registerFailureCommand = RegisterResult(false, error.message)
           transferController.handle(registerFailureMetadata, registerFailureCommand)

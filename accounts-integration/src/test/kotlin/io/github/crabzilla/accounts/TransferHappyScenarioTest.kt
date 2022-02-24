@@ -1,16 +1,22 @@
 package io.github.crabzilla.accounts
 
 import io.github.crabzilla.accounts.Helpers.asJson
-import io.github.crabzilla.accounts.Helpers.configRetriever
+import io.github.crabzilla.accounts.MainVerticle.Companion.config
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand
+import io.github.crabzilla.accounts.domain.accounts.accountConfig
+import io.github.crabzilla.accounts.domain.accounts.accountJson
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand
+import io.github.crabzilla.accounts.domain.transfers.transferConfig
+import io.github.crabzilla.accounts.domain.transfers.transferJson
 import io.github.crabzilla.core.metadata.CommandMetadata
 import io.github.crabzilla.pgclient.PgClientFactory
+import io.github.crabzilla.pgclient.command.CommandController
+import io.github.crabzilla.pgclient.command.CommandControllerBuilder
+import io.github.crabzilla.pgclient.command.SnapshotType
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Future
 import io.vertx.core.Future.succeededFuture
 import io.vertx.core.Vertx
-import io.vertx.core.json.JsonObject
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
 import io.vertx.pgclient.PgPool
@@ -32,25 +38,21 @@ class TransferHappyScenarioTest {
     private val log = LoggerFactory.getLogger(TransferHappyScenarioTest::class.java)
 
     // create acct1
-    val md1 = CommandMetadata(UUID.randomUUID())
+    val md1 = CommandMetadata.new(UUID.randomUUID())
     val cmd1 = AccountCommand.OpenAccount(md1.stateId, "cpf1", "person1")
 
     // deposit 100 on acct1
-    val md11 = CommandMetadata(md1.stateId)
+    val md11 = CommandMetadata.new(md1.stateId)
     val cmd11 = AccountCommand.DepositMoney(100.00)
 
     // create acct2
-    val md2 = CommandMetadata(UUID.randomUUID())
+    val md2 = CommandMetadata.new(UUID.randomUUID())
     val cmd2 = AccountCommand.OpenAccount(md2.stateId, "cpf2", "person2")
 
     // transfer from acct1 to acct2
-    val md3 = CommandMetadata(UUID.randomUUID())
+    val md3 = CommandMetadata.new(UUID.randomUUID())
     val cmd3 = TransferCommand.RequestTransfer(md3.stateId, 60.00,
       fromAccountId = md1.stateId, toAccountId = md2.stateId)
-
-    private fun dbConfig(config: JsonObject) : JsonObject {
-      return config.getJsonObject("accounts-db-config")
-    }
 
     private const val DEFAULT_WAIT_MS = 2000L
 
@@ -59,18 +61,12 @@ class TransferHappyScenarioTest {
     @BeforeAll
     @JvmStatic
     fun deployMainVerticle(vertx: Vertx, testContext: VertxTestContext) {
-      configRetriever(vertx).config
-        .onSuccess { config ->
-          val pgConnectOptions = PgClientFactory.createPgConnectOptions(dbConfig(config))
-          val pgPoolOptions = PgClientFactory.createPoolOptions(dbConfig(config))
-          pgPool = PgPool.pool(vertx, pgConnectOptions, pgPoolOptions)
-          vertx.deployVerticle(MainVerticle(), DeploymentOptions().setConfig(config), testContext.succeeding {
-            testContext.completeNow()
-          }
-          )
-        }
-    }
-
+      val pgConnectOptions = PgClientFactory.createPgConnectOptions(config)
+      val pgPoolOptions = PgClientFactory.createPoolOptions(config)
+      pgPool = PgPool.pool(vertx, pgConnectOptions, pgPoolOptions)
+      vertx.deployVerticle(MainVerticle(), DeploymentOptions().setConfig(config))
+        .onSuccess { testContext.completeNow() }
+        .onFailure { testContext.failNow(it) }
   }
 
   private fun cleanDatabase(pgPool: PgPool): Future<Void> {
@@ -87,7 +83,8 @@ class TransferHappyScenarioTest {
   @Test
   @Order(1)
   fun `given a fresh database and an account A with 100 and B with 0`(vertx: Vertx, tc: VertxTestContext) {
-    val acctController = CommandControllersFactory.accountsController(vertx, pgPool)
+    val acctController = CommandControllerBuilder(vertx, pgPool)
+      .build(accountJson, accountConfig, SnapshotType.ON_DEMAND)
     cleanDatabase(pgPool)
       .compose {
         log.info("Will handle {}", cmd1)
@@ -111,7 +108,8 @@ class TransferHappyScenarioTest {
   @Test
   @Order(2)
   fun `when transferring 60 from account A to B`(vertx: Vertx, tc: VertxTestContext) {
-    val transferController = CommandControllersFactory.transfersController(vertx, pgPool)
+    val transferController = CommandControllerBuilder(vertx, pgPool)
+      .build(transferJson, transferConfig, SnapshotType.ON_DEMAND)
     log.info("Will handle {}", cmd3)
     transferController.handle(md3, cmd3)
       .onSuccess {
@@ -189,6 +187,7 @@ class TransferHappyScenarioTest {
         tc.completeNow()
       }
       .onFailure { tc.failNow(it) }
+  }
 
   }
 

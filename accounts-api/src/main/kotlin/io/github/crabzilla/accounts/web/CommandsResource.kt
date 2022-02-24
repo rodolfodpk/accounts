@@ -1,8 +1,5 @@
 package io.github.crabzilla.accounts.web
 
-import io.github.crabzilla.core.Command
-import io.github.crabzilla.core.Event
-import io.github.crabzilla.core.State
 import io.github.crabzilla.core.metadata.CommandMetadata
 import io.github.crabzilla.pgclient.command.CommandController
 import io.github.crabzilla.pgclient.command.CommandSideEffect
@@ -11,7 +8,7 @@ import io.vertx.ext.web.RoutingContext
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
-internal class CommandsResource<S: State, C: Command, E: Event>(
+internal class CommandsResource<S: Any, C: Any, E: Any>(
   private val commandController: CommandController<S, C, E>)
 {
   companion object {
@@ -28,7 +25,7 @@ internal class CommandsResource<S: State, C: Command, E: Event>(
 
   private fun requestHandler(ctx: RoutingContext) : Pair<CommandMetadata, JsonObject> {
     val id = UUID.fromString(ctx.request().getParam(ID_PARAM))
-    val metadata = CommandMetadata(id)
+    val metadata = CommandMetadata.new(id)
     return Pair(metadata, ctx.bodyAsJson)
   }
 
