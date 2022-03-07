@@ -13,6 +13,7 @@
     <module>accounts-domain</module>
     <module>accounts-api</module>
     <module>accounts-integration</module>
+    <module>coverage-report</module>
   </modules>
 
   <properties>
