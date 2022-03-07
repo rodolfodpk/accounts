@@ -48,10 +48,6 @@
 
   <repositories>
     <repository>
-      <id>central</id>
-      <url>https://repo.maven.apache.org/maven2</url>
-    </repository>
-    <repository>
       <id>jitpack.io</id>
       <url>https://jitpack.io</url>
     </repository>
@@ -75,13 +71,13 @@
 
       <!-- crabzilla -->
       <dependency>
-        <groupId>io.github.crabzilla</groupId>
+        <groupId>io.github.crabzilla.crabzilla</groupId>
         <artifactId>crabzilla-core</artifactId>
         <version>${crabzilla.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>io.github.crabzilla</groupId>
+        <groupId>io.github.crabzilla.crabzilla</groupId>
         <artifactId>crabzilla-pgclient</artifactId>
         <version>${crabzilla.version}</version>
       </dependency>
@@ -94,7 +90,7 @@
 
     <!-- crabzilla -->
     <dependency>
-      <groupId>io.github.crabzilla</groupId>
+      <groupId>io.github.crabzilla.crabzilla</groupId>
       <artifactId>crabzilla-core</artifactId>
     </dependency>
 
