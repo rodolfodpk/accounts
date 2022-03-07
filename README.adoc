@@ -12,7 +12,7 @@ ifndef::sourcedir[:sourcedir: ../../main/java]
 
 image:https://img.shields.io/badge/crabzilla.v0.4.5-orange.svg[link="https://github.com/crabzilla/crabzilla"]
 https://github.com/rodolfodpk/accounts-z/actions/workflows/blank.yml[image:https://github.com/rodolfodpk/accounts-z/actions/workflows/blank.yml/badge.svg[CI]]
-https://codecov.io/gh/rodolfodpk/accounts-z[image:https://codecov.io/gh/rodolfodpk/accounts-z/branch/main/graph/badge.svg[codecov]]
+https://codecov.io/gh/rodolfodpk/accounts-z[image:https://codecov.io/gh/rodolfodpk/accounts/branch/main/graph/badge.svg[codecov]]
 
 This is an example of an application using https://vertx.io/[Vert.x] and https://github.com/crabzilla/crabzilla[Crabzilla]
 
