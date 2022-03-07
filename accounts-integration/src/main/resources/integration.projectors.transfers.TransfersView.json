@@ -4,21 +4,16 @@
     "config" : {
       "connectOptionsName": "accounts-db-config",
       "stateTypes" : [
-        "Account"
-      ],
-      "eventTypes" : [
-        "MoneyDeposited",
-        "MoneyWithdrawn",
-        "AccountClosed"
+        "Transfer"
       ],
       "eventsProjectorFactoryClassName"
-      : "io.github.crabzilla.accounts.projectors.accounts.AccountsProjectorFactory",
+      : "io.github.crabzilla.accounts.integration.projectors.transfers.TransfersProjectorFactory",
       "initialInterval" : 5000,
       "interval" : 100,
       "maxInterval" : 30000,
       "metricsInterval" : 30000,
       "maxNumberOfRows": 250,
-      "viewName": "accounts_view"
+      "viewName": "transfers_view"
     }
   }
 }

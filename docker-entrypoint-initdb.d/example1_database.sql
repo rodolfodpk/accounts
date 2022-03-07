@@ -70,8 +70,8 @@ CREATE TABLE events_2 PARTITION OF events
 
 -- app data
 
-INSERT INTO projections (name, sequence) values ('projectors.accounts.AccountsView', 0);
-INSERT INTO projections (name, sequence) values ('projectors.transfers.TransfersView', 0);
+INSERT INTO projections (name, sequence) values ('integration.projectors.accounts.AccountsView', 0);
+INSERT INTO projections (name, sequence) values ('integration.projectors.transfers.TransfersView', 0);
 
 -- read model
 

@@ -8,9 +8,9 @@ import io.github.crabzilla.accounts.domain.accounts.accountJson
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand
 import io.github.crabzilla.accounts.domain.transfers.transferConfig
 import io.github.crabzilla.accounts.domain.transfers.transferJson
+import io.github.crabzilla.accounts.integration.AccountOpenedProjector
 import io.github.crabzilla.core.metadata.CommandMetadata
 import io.github.crabzilla.pgclient.PgClientFactory
-import io.github.crabzilla.pgclient.command.CommandController
 import io.github.crabzilla.pgclient.command.CommandControllerBuilder
 import io.github.crabzilla.pgclient.command.SnapshotType
 import io.vertx.core.DeploymentOptions
@@ -65,38 +65,37 @@ class TransferHappyScenarioTest {
       val pgPoolOptions = PgClientFactory.createPoolOptions(config)
       pgPool = PgPool.pool(vertx, pgConnectOptions, pgPoolOptions)
       vertx.deployVerticle(MainVerticle(), DeploymentOptions().setConfig(config))
+        .compose { cleanDatabase(pgPool) }
         .onSuccess { testContext.completeNow() }
         .onFailure { testContext.failNow(it) }
-  }
+    }
 
-  private fun cleanDatabase(pgPool: PgPool): Future<Void> {
-    return pgPool
-      .query("delete from commands").execute()
-      .compose { pgPool.query("delete from events").execute() }
-      .compose { pgPool.query("delete from snapshots").execute() }
-      .compose { pgPool.query("delete from accounts_view").execute() }
-      .compose { pgPool.query("delete from transfers_view").execute() }
-      .compose { pgPool.query("update projections set sequence = 0").execute() }
-      .mapEmpty()
+    private fun cleanDatabase(pgPool: PgPool): Future<Void> {
+      return pgPool
+        .query("delete from commands").execute()
+        .compose { pgPool.query("delete from events").execute() }
+        .compose { pgPool.query("delete from snapshots").execute() }
+        .compose { pgPool.query("delete from accounts_view").execute() }
+        .compose { pgPool.query("delete from transfers_view").execute() }
+        .compose { pgPool.query("update projections set sequence = 0").execute() }
+        .mapEmpty()
+    }
   }
 
   @Test
   @Order(1)
   fun `given a fresh database and an account A with 100 and B with 0`(vertx: Vertx, tc: VertxTestContext) {
     val acctController = CommandControllerBuilder(vertx, pgPool)
-      .build(accountJson, accountConfig, SnapshotType.ON_DEMAND)
-    cleanDatabase(pgPool)
+      .build(accountJson, accountConfig, SnapshotType.ON_DEMAND, AccountOpenedProjector("accounts_view"))
+    log.info("Will handle {}", cmd1)
+    acctController.handle(md1, cmd1)
       .compose {
-        log.info("Will handle {}", cmd1)
-        acctController.handle(md1, cmd1)
-          .compose {
-            log.info("Will handle {}", cmd11)
-            acctController.handle(md11, cmd11)
-          }
-          .compose {
-            log.info("Will handle {}", cmd2)
-            acctController.handle(md2, cmd2)
-          }
+        log.info("Will handle {}", cmd11)
+        acctController.handle(md11, cmd11)
+      }
+      .compose {
+        log.info("Will handle {}", cmd2)
+        acctController.handle(md2, cmd2)
       }
       .onSuccess {
         Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
@@ -113,6 +112,7 @@ class TransferHappyScenarioTest {
     log.info("Will handle {}", cmd3)
     transferController.handle(md3, cmd3)
       .onSuccess {
+        Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
         tc.completeNow()
       }
       .onFailure { tc.failNow(it) }
@@ -122,7 +122,7 @@ class TransferHappyScenarioTest {
   @Order(3)
   fun `then after triggering transfers processor`(vertx: Vertx, tc: VertxTestContext) {
     vertx.eventBus()
-      .request<Void>("crabzilla.io.github.crabzilla.accounts.processors.PendingTransfersVerticle.ping",
+      .request<Void>("crabzilla.io.github.crabzilla.accounts.integration.PendingTransfersVerticle.ping",
         "go!") {
         Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
         tc.completeNow()
@@ -132,15 +132,21 @@ class TransferHappyScenarioTest {
   @Test
   @Order(4)
   fun `and after triggering accounts projector`(vertx: Vertx, tc: VertxTestContext) {
-    vertx.eventBus().request<Void>("crabzilla.projectors.projectors.accounts.AccountsView", "go!") {
-      tc.completeNow()
+    vertx
+      .eventBus()
+      .request<Void>("crabzilla.projectors.integration.projectors.accounts.AccountsView", "go!") {
+        Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background proces
+        tc.completeNow()
     }
   }
 
   @Test
   @Order(5)
   fun `and after triggering transfers projector`(vertx: Vertx, tc: VertxTestContext) {
-    vertx.eventBus().request<Void>("crabzilla.projectors.projectors.transfers.TransfersView", "go!") {
+    vertx
+      .eventBus()
+      .request<Void>("crabzilla.projectors.integration.projectors.transfers.TransfersView", "go!") {
+      Thread.sleep(DEFAULT_WAIT_MS) // to give some time to background process
       tc.completeNow()
     }
   }
@@ -187,8 +193,6 @@ class TransferHappyScenarioTest {
         tc.completeNow()
       }
       .onFailure { tc.failNow(it) }
-  }
-
   }
 
 }

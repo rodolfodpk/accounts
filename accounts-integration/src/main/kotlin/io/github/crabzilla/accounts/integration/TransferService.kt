@@ -1,4 +1,4 @@
-package io.github.crabzilla.accounts.processors
+package io.github.crabzilla.accounts.integration
 
 import io.github.crabzilla.accounts.domain.accounts.Account
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand

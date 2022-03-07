@@ -1,11 +1,10 @@
-package io.github.crabzilla.accounts.processors
+package io.github.crabzilla.accounts.integration
 
 import io.github.crabzilla.accounts.domain.accounts.accountConfig
 import io.github.crabzilla.accounts.domain.accounts.accountJson
 import io.github.crabzilla.accounts.domain.transfers.transferConfig
 import io.github.crabzilla.accounts.domain.transfers.transferJson
 import io.github.crabzilla.pgclient.PgClientAbstractVerticle
-import io.github.crabzilla.pgclient.command.CommandController
 import io.github.crabzilla.pgclient.command.CommandControllerBuilder
 import io.github.crabzilla.pgclient.command.SnapshotType
 import io.vertx.core.Future

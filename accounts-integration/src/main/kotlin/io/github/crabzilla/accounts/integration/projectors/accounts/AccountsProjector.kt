@@ -1,4 +1,4 @@
-package io.github.crabzilla.accounts.projectors.accounts
+package io.github.crabzilla.accounts.integration.projectors.accounts
 
 import io.github.crabzilla.core.metadata.EventMetadata
 import io.github.crabzilla.pgclient.EventsProjector
@@ -18,6 +18,7 @@ class AccountsProjector(override val viewName: String) : EventsProjector {
         .execute(Tuple.of(id, finalBalance))
         .mapEmpty()
     }
+
 
     val id = eventMetadata.stateId
     return when (val eventName = eventAsJson.getString("type")) {

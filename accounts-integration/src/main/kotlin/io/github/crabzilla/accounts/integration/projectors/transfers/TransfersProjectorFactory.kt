@@ -1,10 +1,11 @@
-package io.github.crabzilla.accounts.projectors.accounts
+package io.github.crabzilla.accounts.integration.projectors.transfers
 
 import io.github.crabzilla.pgclient.EventsProjector
 import io.github.crabzilla.pgclient.projection.EventsProjectorProvider
 
-class AccountsProjectorFactory : EventsProjectorProvider {
+
+class TransfersProjectorFactory: EventsProjectorProvider {
   override fun create(): EventsProjector {
-    return AccountsProjector("accounts_view")
+    return TransferProjector()
   }
 }

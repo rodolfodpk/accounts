@@ -1,7 +1,7 @@
 package io.github.crabzilla.accounts
 
 import com.hazelcast.config.Config
-import io.github.crabzilla.accounts.processors.PendingTransfersVerticle
+import io.github.crabzilla.accounts.integration.PendingTransfersVerticle
 import io.github.crabzilla.pgclient.projection.deployProjector
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.DeploymentOptions
@@ -56,10 +56,10 @@ class MainVerticle : AbstractVerticle() {
         log.info(config.encodePrettily())
         vertx.deployProcessor(config, PendingTransfersVerticle::class.java)
           .compose {
-            vertx.deployProjector(config, "service:projectors.accounts.AccountsView")
+            vertx.deployProjector(config, "service:integration.projectors.accounts.AccountsView")
           }
           .compose {
-            vertx.deployProjector(config, "service:projectors.transfers.TransfersView")
+            vertx.deployProjector(config, "service:integration.projectors.transfers.TransfersView")
           }
           .onFailure {
             startPromise.fail(it)

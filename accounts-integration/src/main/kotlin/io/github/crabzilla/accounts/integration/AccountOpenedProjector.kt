@@ -1,4 +1,4 @@
-package io.github.crabzilla.accounts.processors
+package io.github.crabzilla.accounts.integration
 
 import io.github.crabzilla.core.metadata.EventMetadata
 import io.github.crabzilla.pgclient.EventsProjector

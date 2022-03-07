@@ -1,4 +1,4 @@
-package io.github.crabzilla.accounts.projectors.transfers
+package io.github.crabzilla.accounts.integration.projectors.transfers
 
 import io.github.crabzilla.core.metadata.EventMetadata
 import io.github.crabzilla.pgclient.EventsProjector
