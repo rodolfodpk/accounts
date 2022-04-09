@@ -7,15 +7,12 @@ import io.github.crabzilla.accounts.domain.accounts.AccountEvent.AccountOpened
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.MoneyDeposited
 import io.github.crabzilla.accounts.domain.accounts.AccountEvent.MoneyWithdrawn
 import io.github.crabzilla.core.command.CommandControllerConfig
-import io.github.crabzilla.core.json.javaModule
-import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
 @kotlinx.serialization.ExperimentalSerializationApi
-private val accountModule = SerializersModule {
-    include(javaModule)
+val accountModule = SerializersModule {
     polymorphic(Account::class) {
       subclass(Account::class, Account.serializer())
     }
@@ -31,12 +28,10 @@ private val accountModule = SerializersModule {
     }
 }
 
-val accountJson = Json { serializersModule = accountModule }
-
 val accountConfig = CommandControllerConfig(
-  PolymorphicSerializer(Account::class),
-  PolymorphicSerializer(AccountCommand::class),
-  PolymorphicSerializer(AccountEvent::class),
+  Account::class,
+  AccountCommand::class,
+  AccountEvent::class,
   accountEventHandler,
   { AccountCommandHandler() }
 )

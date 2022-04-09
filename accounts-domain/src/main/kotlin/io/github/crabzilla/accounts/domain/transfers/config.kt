@@ -5,8 +5,6 @@ import io.github.crabzilla.accounts.domain.transfers.TransferCommand.RequestTran
 import io.github.crabzilla.accounts.domain.transfers.TransferEvent.TransferConcluded
 import io.github.crabzilla.accounts.domain.transfers.TransferEvent.TransferRequested
 import io.github.crabzilla.core.command.CommandControllerConfig
-import io.github.crabzilla.core.json.javaModule
-import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -15,8 +13,7 @@ import kotlinx.serialization.modules.polymorphic
  * kotlinx.serialization
  */
 @kotlinx.serialization.ExperimentalSerializationApi
-private val transferModule = SerializersModule {
-  include(javaModule)
+val transferModule = SerializersModule {
   polymorphic(Transfer::class) {
     subclass(Transfer::class, Transfer.serializer())
   }
@@ -30,12 +27,10 @@ private val transferModule = SerializersModule {
   }
 }
 
-val transferJson = Json { serializersModule = transferModule }
-
 val transferConfig = CommandControllerConfig(
-  PolymorphicSerializer(Transfer::class),
-  PolymorphicSerializer(TransferCommand::class),
-  PolymorphicSerializer(TransferEvent::class),
+  Transfer::class,
+  TransferCommand::class,
+  TransferEvent::class,
   transferEventHandler,
   { TransferCommandHandler() }
 )

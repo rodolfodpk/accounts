@@ -1,12 +1,11 @@
 package io.github.crabzilla.accounts.integration
 
 import io.github.crabzilla.accounts.domain.accounts.accountConfig
-import io.github.crabzilla.accounts.domain.accounts.accountJson
+import io.github.crabzilla.accounts.domain.accounts.accountModule
 import io.github.crabzilla.accounts.domain.transfers.transferConfig
-import io.github.crabzilla.accounts.domain.transfers.transferJson
+import io.github.crabzilla.accounts.domain.transfers.transferModule
 import io.github.crabzilla.pgclient.PgClientAbstractVerticle
 import io.github.crabzilla.pgclient.command.CommandControllerBuilder
-import io.github.crabzilla.pgclient.command.SnapshotType
 import io.vertx.core.Future
 import io.vertx.sqlclient.Row
 import io.vertx.sqlclient.RowSet
@@ -24,8 +23,8 @@ class PendingTransfersVerticle : PgClientAbstractVerticle() {
   override fun start() {
 
     val builder = CommandControllerBuilder(vertx, pgPool)
-    val acctController = builder.build(accountJson, accountConfig, SnapshotType.ON_DEMAND)
-    val transferController = builder.build(transferJson, transferConfig, SnapshotType.ON_DEMAND)
+    val acctController = builder.build(accountModule, accountConfig)
+    val transferController = builder.build(transferModule, transferConfig)
     val service = TransferService(acctController, transferController)
 
     log.info("Starting with interval (ms) = {}", config().getLong("transfer.processor.interval", DEFAULT_INTERVAL))

@@ -3,21 +3,16 @@ package io.github.crabzilla.accounts
 import io.github.crabzilla.accounts.MainVerticle.Companion.config
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand
 import io.github.crabzilla.accounts.domain.accounts.accountConfig
-import io.github.crabzilla.accounts.domain.accounts.accountJson
+import io.github.crabzilla.accounts.domain.accounts.accountModule
 import io.github.crabzilla.accounts.web.AccountOpenedProjector
 import io.github.crabzilla.core.metadata.CommandMetadata
 import io.github.crabzilla.pgclient.PgClientFactory
-import io.github.crabzilla.pgclient.command.CommandController
 import io.github.crabzilla.pgclient.command.CommandControllerBuilder
-import io.github.crabzilla.pgclient.command.SnapshotType
-import io.vertx.core.DeploymentOptions
 import io.vertx.core.Future
 import io.vertx.core.Vertx
-import io.vertx.core.json.JsonObject
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
 import io.vertx.pgclient.PgPool
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
@@ -65,7 +60,7 @@ class CpfUniquenessTest {
     val pgPool = pgPool(vertx)
     log.info("Got config {}", config.encodePrettily())
     val acctController = CommandControllerBuilder(vertx, pgPool)
-      .build(accountJson, accountConfig, SnapshotType.ON_DEMAND, AccountOpenedProjector("accounts_view"))
+      .build(accountModule, accountConfig, AccountOpenedProjector("accounts_view"))
     cleanDatabase(pgPool)
       .compose {
         log.info("Will handle {}", cmd1)

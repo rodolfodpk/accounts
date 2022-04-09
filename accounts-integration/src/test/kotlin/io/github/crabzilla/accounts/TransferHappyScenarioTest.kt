@@ -4,15 +4,14 @@ import io.github.crabzilla.accounts.Helpers.asJson
 import io.github.crabzilla.accounts.MainVerticle.Companion.config
 import io.github.crabzilla.accounts.domain.accounts.AccountCommand
 import io.github.crabzilla.accounts.domain.accounts.accountConfig
-import io.github.crabzilla.accounts.domain.accounts.accountJson
+import io.github.crabzilla.accounts.domain.accounts.accountModule
 import io.github.crabzilla.accounts.domain.transfers.TransferCommand
 import io.github.crabzilla.accounts.domain.transfers.transferConfig
-import io.github.crabzilla.accounts.domain.transfers.transferJson
+import io.github.crabzilla.accounts.domain.transfers.transferModule
 import io.github.crabzilla.accounts.integration.AccountOpenedProjector
 import io.github.crabzilla.core.metadata.CommandMetadata
 import io.github.crabzilla.pgclient.PgClientFactory
 import io.github.crabzilla.pgclient.command.CommandControllerBuilder
-import io.github.crabzilla.pgclient.command.SnapshotType
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Future
 import io.vertx.core.Future.succeededFuture
@@ -74,7 +73,6 @@ class TransferHappyScenarioTest {
       return pgPool
         .query("delete from commands").execute()
         .compose { pgPool.query("delete from events").execute() }
-        .compose { pgPool.query("delete from snapshots").execute() }
         .compose { pgPool.query("delete from accounts_view").execute() }
         .compose { pgPool.query("delete from transfers_view").execute() }
         .compose { pgPool.query("update projections set sequence = 0").execute() }
@@ -86,7 +84,7 @@ class TransferHappyScenarioTest {
   @Order(1)
   fun `given a fresh database and an account A with 100 and B with 0`(vertx: Vertx, tc: VertxTestContext) {
     val acctController = CommandControllerBuilder(vertx, pgPool)
-      .build(accountJson, accountConfig, SnapshotType.ON_DEMAND, AccountOpenedProjector("accounts_view"))
+      .build(accountModule, accountConfig, AccountOpenedProjector("accounts_view"))
     log.info("Will handle {}", cmd1)
     acctController.handle(md1, cmd1)
       .compose {
@@ -108,7 +106,7 @@ class TransferHappyScenarioTest {
   @Order(2)
   fun `when transferring 60 from account A to B`(vertx: Vertx, tc: VertxTestContext) {
     val transferController = CommandControllerBuilder(vertx, pgPool)
-      .build(transferJson, transferConfig, SnapshotType.ON_DEMAND)
+      .build(transferModule, transferConfig)
     log.info("Will handle {}", cmd3)
     transferController.handle(md3, cmd3)
       .onSuccess {
